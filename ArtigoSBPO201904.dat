@@ -1,0 +1,19 @@
+int M = 20000;
+int T = 1440;
+int quantidadeObras = 2;
+int quantidadeViagem = 6;
+int quantidadeCentrais = 1;
+int quantidadeTiposConcreto = 2;
+
+int CaminhoesPorCentral = [10];
+int BombasPorCentral = [5];
+float HorarioChegadaObraViagem = [420, 420, 480, 480, 540, 540];
+float VolumeConcretoViagem = [[8, 0, 8, 0, 8, 0],
+							  [0, 8, 0, 8, 0, 8]];
+float TempoMedioTrajetoCentralObraIda = [[30, 20]];
+float TempoMedioTrajetoCentralObraVolta = [[25, 15]];;
+float TempoMedioDescargaObra = [15, 20];
+float CustoRodoviarioViagemCentral = [[80, 80, 80, 80, 80, 80]];
+float CustoAtrasoSaidaCentral = [[8, 8, 8, 8, 8, 8]];
+float CustoAtrasoSaidaObra = [[1, 1, 1, 1, 1, 1]];
+float CustoM3ConcretoCentra = [[30, 20]];
