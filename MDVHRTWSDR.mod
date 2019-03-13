@@ -20,15 +20,15 @@ int ti[V][V] = ...; // Tempo trajeto ida entre i e j
 int tv[V][V] = ...; // Tempo trajeto volta entre i e j
 int tp[rP] = ...; // Tempo de pesagem em cada ponto de carga p
 int td[V] = ...; // Tempo de descarga no cliente c
-int hc[rC][Vg] = ...; // Hora de chega para cada viagem do cliente
-float vc[rC][Vg] = ...; // Volume de material solicitado pelo cliente em cada viagem 
+int hc[V][Vg] = ...; // Hora de chega para cada viagem do cliente
+float vc[V][Vg] = ...; // Volume de material solicitado pelo cliente em cada viagem 
 int qv[V] = ...; // Quantidade de viagens para cada cliente
 int kp[rP] = ...; // Quantidade veiculos disponiveis por central
 // ----------------------------------------------------------------------------------------------------------------------
 // Variaveis decisao
 dvar boolean x[K][rP][V][V][Vg]; // Se a rota de i para j é percorrida pelo veiculo k da central p para antender a viagem v
-dvar float qmc[K][rP][V]; // Quantidade de material que o caminhao carrega
-dvar float qme[K][rP][V][Vg]; // Quanto material o caminhao k da central p entrega no cliente c 
+//dvar float qmc[K][rP][V]; // Quantidade de material que o caminhao carrega
+//dvar float qme[K][rP][V][Vg]; // Quanto material o caminhao k da central p entrega no cliente c 
 dvar int hp[K][V][Vg]; // Hora de pesagem da viagem v para atendimento do cliente c para a viagem v
 dvar int hsac[K][rP][V][Vg]; // Hora de saida do veiculo k para atendimento do cliente c para a viagem v
 dvar int hiac[K][rP][V][Vg]; // Hora de início do atendimento do cliente c pelo veiculo k para a viagem v
@@ -37,6 +37,10 @@ dvar int hcpc[K][rP][V][Vg]; // Hora de chegada no ponto de carga do atendimento
 dvar boolean cu[K][rP][T]; // Caminhão k do ponto de carga p está sendo usado no instante de tempo t
 // ----------------------------------------------------------------------------------------------------------------------
 // Modelo 
+
+execute PARAMS {
+  cplex.tilim = 100;
+}
 
 minimize sum(k in K, p in rP, i in V, j in V, v in Vg)(x[k][p][i][j][v] * (cr[i][j] + cac[j][p])) + 
 	sum(k in K, p in rP, t in T)(cu[k][p][t] * cuc[k]);
@@ -49,20 +53,12 @@ subject to {
 	}
 	QuantidadeDeViagensQueChegamEmUmClienteTemQueSerIgualAQuantidadeSolicitada:
 	forall(c in V : c > qP){
-		sum(k in K, p in rP, i in V, v in Vg)(x[k][p][i][c][v]) == qv[c];
-	}
-	DemandaDeCadaClienteDeveSerAtendida:
-	forall(k in K, p in rP, c in V, v in Vg : c > qP) {
-		  sum(i in V : i <= qP)(x[k][p][i][c][v] * qme[k][p][i][c]) == vc[c][v];	
+		sum(k in K, p in rP, i in V, v in Vg : i <= qP)(x[k][p][i][c][v]) == qv[c];
 	}
 	EvitarSubTourQueNaoPassamPorPontosDeCarga:
-	forall(k in K, p in rP, i in V, c in V, v in Vg : c > qP && i > qP && i != c){
-		x[k][p][i][c][v] * (qmc[k][p][c] - qmc[k][p][i] + qme[k][p][i][c]) >= 0;	
-	}
-	QuantidadeDeMaterialQueCaminhaoCarregaQuandoChegaNoPontoCargaEhZero:
-	forall(k in K, p in rP, i in V, c in V, v in Vg : c > qP && i <= qP){
-		x[k][p][c][i][v] * (qmc[k][p][i]) <= 0;	
-	}
+	/*forall(k in K, p in rP, i in V, c in V, v in Vg : c > qP && i > qP && i != c){
+		qmc[k][p][c] - qmc[k][p][i] + qme[k][p][i][c] >= (1 - x[k][p][i][c][v]) * M;	
+	}*/
 	QuantidadeDeMaterialEntreguePontosCargaEhZero: // Necessária ?
 	CaminhaoNaoTrafegaEntreBases:
 	forall(j in V : j <= qP){
@@ -70,10 +66,10 @@ subject to {
 	}
 	RestricoesDeJanelaDeTempoParaCadaCliente:
 	forall(k in K, p in rP, i in V, c in V, v in Vg : c > qP) {
-		x[k][p][i][c][v] * (hiac[k][p][c][v] - hc[c][v]) == 0;
-		x[k][p][i][c][v] * (hp[k][c][v] + tp[p] + ti[i][c] - hiac[k][p][c][v]) == 0;
-		x[k][p][i][c][v] * (hiac[k][p][c][v] + td[c] - hfac[k][p][c][v]) == 0;
-		x[k][p][i][c][v] * (hfac[k][p][c][v] + tv[c][i] - hcpc[k][p][c][v]) == 0;
+		hiac[k][p][c][v] - hc[c][v] >= (1 - x[k][p][i][c][v]) * M;
+		hp[k][c][v] + tp[p] + ti[i][c] - hiac[k][p][c][v] >= (1 - x[k][p][i][c][v]) * M;
+		hiac[k][p][c][v] + td[c] - hfac[k][p][c][v] >= (1 - x[k][p][i][c][v]) * M;
+		hfac[k][p][c][v] + tv[c][i] - hcpc[k][p][c][v] >= (1 - x[k][p][i][c][v]) * M;
 	}
 	QuantidadeCaminhaoSaiBaseTemQueSerMenorIgualQuantidadeDisponivel:
 	forall(k in K, p in rP, c in V, v in Vg, t in T : c > qP){
@@ -86,8 +82,8 @@ subject to {
 	//SeCaminhaoChegaEmClienteTemQuePossuirMaterialSolicitadoPeloCliente:
 	NaoNegatividadeDasVariaveis:
 	forall(k in K, p in rP, i in V, j in V, v in Vg){
-		qmc[k][p][v] >= 0;
-		qme[k][p][i][v] >= 0;
+		//qmc[k][p][v] >= 0;
+		//qme[k][p][i][v] >= 0;
 		hp[k][i][v] >= 0;
 		hsac[k][p][i][v] >= 0;
 		hiac[k][p][i][v] >= 0;

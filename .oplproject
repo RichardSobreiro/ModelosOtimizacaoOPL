@@ -10,8 +10,6 @@
 		<config default="false" name="Configuration2" category="opl">
 			<ref name="ArtigoSBPO201904.mod" type="model">
 			</ref>
-			<ref name="ArtigoSBPO201904.ops" type="setting">
-			</ref>
 			<ref name="ArtigoSBPO201904.dat" type="data">
 			</ref>
 		</config>
