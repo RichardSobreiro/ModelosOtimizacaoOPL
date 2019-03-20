@@ -23,6 +23,7 @@ range P = 1..qPontosCarga;
 
 // Parametros
 float d[C][T] = ...; // Demanda do concreto c no dia t
+
 float qct[CT][C] = ...; // Quantidade do cimento ct necessária para produzir um metro cúbico do concreto c
 float qad[AD][C] = ...; // Quantidade da adição ad necessária para produzir um metro cúbico do concreto c
 float qam[AM][C] = ...; // Quantidade da areia am necessária para produzir um metro cúbico do concreto c 
@@ -39,13 +40,13 @@ float ca[A][P][T] = ...;  // Custo unitário da água a no ponto de carga p
 float cav[AV][P][T] = ...; // Custo unitário do aditivo av no ponto de carga p
 float cma[MA][P][T] = ...; // Custo unitário do material adicional ma no ponto de carga p 
 
-float ecto[CT][P]; // Estoque inicial do cimento c
-float eado[AD][P]; // Estoque inicial de adição ad no ponto de carga p
-float eamo[AM][P]; // Estoque inicial de areia am no ponto de carga p
-float eago[AG][P]; // Estoque inicial de brita ag no ponto de carga p
-float eao[A][P]; // Estoque inicial de água a no ponto de carga p
-float eavo[AV][P]; // Estoque inicial de aditivo av no ponto de carga p
-float emao[MA][P]; // Estoque inicial de material adicional ma no ponto de carga p
+float ecto[CT][P] = ...; // Estoque inicial do cimento c
+float eado[AD][P] = ...; // Estoque inicial de adição ad no ponto de carga p
+float eamo[AM][P] = ...; // Estoque inicial de areia am no ponto de carga p
+float eago[AG][P] = ...; // Estoque inicial de brita ag no ponto de carga p
+float eao[A][P] = ...; // Estoque inicial de água a no ponto de carga p
+float eavo[AV][P] = ...; // Estoque inicial de aditivo av no ponto de carga p
+float emao[MA][P] = ...; // Estoque inicial de material adicional ma no ponto de carga p
 
 float Mc[C][P][T] = ...; // Máxima quantidade de concreto c que pode ser demandada no ponto de carga p no dia t
 
