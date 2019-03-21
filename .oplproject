@@ -14,9 +14,9 @@
 			</ref>
 		</config>
 		<config default="true" name="Configuration3" category="opl">
-			<ref name="MDVHRTWSDR.dat" type="data">
+			<ref name="Dieta.dat" type="data">
 			</ref>
-			<ref name="MDVHRTWSDR.mod" type="model">
+			<ref name="Dieta.mod" type="model">
 			</ref>
 		</config>
 	</configs>

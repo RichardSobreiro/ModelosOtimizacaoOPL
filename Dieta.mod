@@ -69,7 +69,7 @@ dvar float ema[MA][P][T]; // Estoque de material adicional ma no ponto de carga 
 
 dvar float cc[C][P][T]; // Custo do metro cúbico do concreto ct no ponto de carga p no dia t
 dvar float xc[C][P][T]; // Quantidade de concreto c produzida no ponto de carga p no dia t
-dvar boolean y[C][P][T]; // Se o concreto c será produzido no ponto de carga p no dia t
+//dvar boolean y[C][P][T]; // Se o concreto c será produzido no ponto de carga p no dia t
 
 // Modelo
 minimize sum(c in C, p in P, t in T)(cc[c][p][t] * d[c][t]);
@@ -85,13 +85,11 @@ subject to {
 		}
 	}
 	ControleEstoqueDeAdicao:
-	forall(ad in AD, p in P, t in T, c in C){
-		if(t > 1){
-			ead[ad][p][t] >= ect[ad][p][t-1] + xad[ad][p][t] - (qad[ad][c] * xc[c][p][t]);
-		}
-		else{
-			ead[ad][p][t] == eado[ad][p];
-		}
+	forall(ad in AD, p in P, t in T, c in C: t > 1){
+		ead[ad][p][t] >= ead[ad][p][t-1] + xad[ad][p][t] - (qad[ad][c] * xc[c][p][t]);
+	}
+	forall(ad in AD, p in P, c in C){
+		ead[ad][p][1] == eado[ad][p];
 	}
 	ControleEstoqueAgregadoMiudo:
 	forall(am in AM, p in P, t in T, c in C){
@@ -139,10 +137,10 @@ subject to {
 		}
 	}
 	
-	DisponibilidadeDoConcretoNoPontoCargaNoDia:
+	/*DisponibilidadeDoConcretoNoPontoCargaNoDia:
 	forall(c in C, p in P, t in T){
 		xc[c][p][t] <= Mc[c][p][t] * y[c][p][t];   
-	}
+	}*/
 	
 	DemandaDoConcreto:
 	forall(c in C, t in T){
@@ -158,5 +156,15 @@ subject to {
 			(qa[a][c] * xc[c][p][t] * ca[a][p][t]) + 
 			(qav[av][c] * xc[c][p][t] * cav[av][p][t]) + 
 			(qma[ma][c] * xc[c][p][t] * cma[ma][p][t]);	
+	}
+}
+
+execute {
+	for(var c in C){
+		for(var p in P) {
+			for(var t in T){
+				writeln("Custo: ",cc[c][p][t]," Qt Prod.: ", xc[c][p][t],". Disp.: ", y[c][p][t]," ;");
+			}	
+		}			
 	}
 }
