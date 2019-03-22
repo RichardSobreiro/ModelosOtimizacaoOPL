@@ -18,6 +18,8 @@
 			</ref>
 			<ref name="Dieta.mod" type="model">
 			</ref>
+			<ref name="ArtigoSBPO201904.ops" type="setting">
+			</ref>
 		</config>
 	</configs>
 	

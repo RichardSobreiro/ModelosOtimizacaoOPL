@@ -24,6 +24,8 @@ range P = 1..qPontosCarga;
 // Parametros
 float d[C][T] = ...; // Demanda do concreto c no dia t
 
+float QP[P][T] = ...;
+
 float qct[CT][C] = ...; // Quantidade do cimento ct necessária para produzir um metro cúbico do concreto c
 float qad[AD][C] = ...; // Quantidade da adição ad necessária para produzir um metro cúbico do concreto c
 float qam[AM][C] = ...; // Quantidade da areia am necessária para produzir um metro cúbico do concreto c 
@@ -72,7 +74,7 @@ dvar float xc[C][P][T]; // Quantidade de concreto c produzida no ponto de carga 
 //dvar boolean y[C][P][T]; // Se o concreto c será produzido no ponto de carga p no dia t
 
 // Modelo
-minimize sum(c in C, p in P, t in T)(cc[c][p][t] * d[c][t]);
+minimize sum(c in C, p in P, t in T)(cc[c][p][t]);
 
 subject to {
 	ControleEstoqueDeCimento:
@@ -144,7 +146,7 @@ subject to {
 	
 	DemandaDoConcreto:
 	forall(c in C, t in T){
-		sum( p in P )(xc[c][p][t]) == d[c][t]; 	
+		sum( p in P )(xc[c][p][t]) >= d[c][t]; 	
 	}
 	
 	CustoDoConcreto:
@@ -157,14 +159,35 @@ subject to {
 			(qav[av][c] * xc[c][p][t] * cav[av][p][t]) + 
 			(qma[ma][c] * xc[c][p][t] * cma[ma][p][t]);	
 	}
+	
+	CapacidadePontosCarga:
+	forall(p in P, t in T){
+		sum(c in C)(xc[c][p][t]) <= QP[p][t];
+	}
+	
+	NaoNegatividadeDasVariaveis:
+	forall(c in C, p in P, t in T) {
+		xc[c][p][t] >= 0;
+		cc[c][p][t] >= 0;
+	}
 }
 
 execute {
-	for(var c in C){
-		for(var p in P) {
-			for(var t in T){
-				writeln("Custo: ",cc[c][p][t]," Qt Prod.: ", xc[c][p][t],". Disp.: ", y[c][p][t]," ;");
-			}	
-		}			
+	var qtdTotalProduzida = 0;
+	for(var t in T){
+		for(var c in C ) {
+			qtdTotalProduzida = 0;
+			for(var p in P){
+				qtdTotalProduzida += xc[c][p][t];
+			}
+			writeln("--------------------------------------------------------------");
+			writeln("CONCRETO: ",c," | DIA: ",t," => ");
+			writeln("Demanda: ",d[c][t]," | QtdTotalProduzida de ",c," : ",qtdTotalProduzida);
+			for(var p in P){
+				writeln("Qtd Produzida Ponto Carga ",p," : ", xc[c][p][t]);
+				writeln("Custo produção Ponto Carga ",p," : ", cc[c][p][t]);
+			}
+			writeln("--------------------------------------------------------------");
+		}		
 	}
 }
