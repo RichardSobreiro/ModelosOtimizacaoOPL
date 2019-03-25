@@ -7,9 +7,9 @@ range P = 1..qPontosCarga; // Conjunto dos pontos de carga
 range V = 1..qViagens; // Quantidade de viagens a serem alocadas para pontos de carga
 
 // Parametros
-float c[V][P] = ...; // Custo de atendimento da viagem v pelo ponto de carga p
+float c[V][P] = ...; // Custo de atendimento da viagem v pelo ponto de carga p (Custo dos insumos + Custo rodoviário + Custo de pessoal)
 int qvc[P] = ...; // Quantidade de viagens que cada ponto de carga p pode atender por dia
-float cuve[P] = ...;
+float cuve[P] = ...; // 
 
 // Variáveis de decisão
 dvar boolean x[V][P];

@@ -1,93 +1,141 @@
-int M = ...;
+int qNos = ...;
+int qClusters = ...;
+int qPontosCarga = ...;
+int qBetoneiras = ...;
 
-int qC = ...;
-int qP = ...;
-int qB = ...;
-int qVg = ...;
-// ----------------------------------------------------------------------------------------------------------------------
-range rC = 1..qC;
-range rP = 1..qP;
-range V = 1..(qC + qP);
-range Vg = 1..(qVg);
-range K = 1..qB;
-range T = 1..1440;
-// ----------------------------------------------------------------------------------------------------------------------
-// Parametros
-float cr[V][V] = ...; // Custo rodoviario
-float cac[V][rP] = ...; // Custo de atendimento do client j pelo ponto de carga p
-float cuc[K] = ...; // Custo de uso do caminhao k
-int ti[V][V] = ...; // Tempo trajeto ida entre i e j
-int tv[V][V] = ...; // Tempo trajeto volta entre i e j
-int tp[rP] = ...; // Tempo de pesagem em cada ponto de carga p
-int td[V] = ...; // Tempo de descarga no cliente c
-int hc[V][Vg] = ...; // Hora de chega para cada viagem do cliente
-float vc[V][Vg] = ...; // Volume de material solicitado pelo cliente em cada viagem 
-int qv[V] = ...; // Quantidade de viagens para cada cliente
-int kp[rP] = ...; // Quantidade veiculos disponiveis por central
-// ----------------------------------------------------------------------------------------------------------------------
-// Variaveis decisao
-dvar boolean x[K][rP][V][V][Vg]; // Se a rota de i para j é percorrida pelo veiculo k da central p para antender a viagem v
-//dvar float qmc[K][rP][V]; // Quantidade de material que o caminhao carrega
-//dvar float qme[K][rP][V][Vg]; // Quanto material o caminhao k da central p entrega no cliente c 
-dvar int hp[K][V][Vg]; // Hora de pesagem da viagem v para atendimento do cliente c para a viagem v
-dvar int hsac[K][rP][V][Vg]; // Hora de saida do veiculo k para atendimento do cliente c para a viagem v
-dvar int hiac[K][rP][V][Vg]; // Hora de início do atendimento do cliente c pelo veiculo k para a viagem v
-dvar int hfac[K][rP][V][Vg]; // Hora de final do atendimento do cliente c pelo veiculo k para a viagem v
-dvar int hcpc[K][rP][V][Vg]; // Hora de chegada no ponto de carga do atendimento do cliente c pelo veiculo k para a viagem v
-dvar boolean cu[K][rP][T]; // Caminhão k do ponto de carga p está sendo usado no instante de tempo t
-// ----------------------------------------------------------------------------------------------------------------------
-// Modelo 
+float Mc = ...;
+float Mt = ...;
+float M = ...;
 
-execute PARAMS {
-  cplex.tilim = 100;
-}
+// Conjuntos
 
-minimize sum(k in K, p in rP, i in V, j in V, v in Vg)(x[k][p][i][j][v] * (cr[i][j] + cac[j][p])) + 
-	sum(k in K, p in rP, t in T)(cu[k][p][t] * cuc[k]);
+range I = 1..qNos;
+//range K = 1..qClusters;
+range P = 1..qPontosCarga;
+range V = 1..qBetoneiras;
 
+// Parâmetros
+
+//float Delta = ...; // Tempo máximo de espera da betoneira entre dois clusters
+float rhoi[I] = ...; // Custo de violação da janela de tempo para o nó i
+float rhov[V] = ...; // Custo de violação do tempo máximo de trabalho para a betoneira v
+float a[I] = ...; // Iniício da janela de atendimento do no i
+//float aCk[K] = ...; // Início da janela de atendimento do cluster Ck
+float b[I] = ...; // Final da janela de tempo de atendimento do no i
+//float bCk[K] = ...; // Final da janela de tempo de atendimento do no i
+float c[V][I][I] = ...; // Custo do percurso entre o no i e j para a betoneira v
+float cf[V] = ...; // Custo fixo de uso da betoneira v
+float dMax = ...; // Distância máxima para nos dentro de um cluster
+float q[V] = ...; // Capacidade da betoneira b
+float st[I][V] = ...; // Horário de chegada da betoneira v no nó i
+//float stC[K][V] = ...; // Horário de chegada efetivo da betoneira v para o cluster k
+float t[V][I][I] = ...; // Tempo médio de viagem entre no i e o nó j para o veículo v
+float tvMax[V] = ...; // Tempo máximo de trabalho para o veículo v
+float w[I] = ...; // Demanda no nó i
+//	float wC[K] = ...; // Demanda do cluster k
+float ctr = ...; // Custo de trabalho por minuto
+
+// Variáveis
+
+dvar boolean S[I][I]; // Nó i é visitado antes/depois do nó j
+dvar boolean X[P][V]; // Veículo v é atribuído ao ponto de carga p
+dvar boolean Y[I][V]; // Veículo v é atribuído ao nó v
+dvar float DeltaA[I]; // Janela de tempo que denota quanto tempo o veículo chegou mais cedo no nó i
+dvar float DeltaB[I]; // Janela de tempo que denota quanto tempo o veículo chegou mais tarde no nó i
+dvar float DeltaT[V]; // Quanto tempo o veículo v trabalho mais que o máximo permitido para o mesmo
+dvar float C[I]; // Custo acumulado devido a distância até o nó i
+dvar float CV[V]; // Custo total devido a distância percorrida pelo veículo v
+dvar float T[I]; // Horário de chegada do veículo no nó i
+dvar float TV[V]; // Tempo total do percurso realizado pelo veículo v
+
+// Modelo
+
+minimize sum(v in V)((cf[v] * sum(p in P)(X[p][v])) + (ctr * TV[v]) + CV[v] + (rhov[v] * DeltaT[v])) + 
+	sum(i in I)(rhoi[i] * (DeltaA[i] + DeltaB[i]));
+	
 subject to {
-	SeChegarEmUmClienteTemQueSair:
-	forall(c in V : c > qP){
-		sum(k in K, p in rP, i in V, v in Vg)(x[k][p][i][c][v]) - 
-			sum(k in K, p in rP, i in V, v in Vg)(x[k][p][c][i][v]) == 0;	
+	AtribuicaoDeNosAosVeiculos:
+	forall(i in I){
+		sum(v in V)(Y[i][v]) <= 1;
+		sum(v in V)(Y[i][v]) >= 1;	
 	}
-	QuantidadeDeViagensQueChegamEmUmClienteTemQueSerIgualAQuantidadeSolicitada:
-	forall(c in V : c > qP){
-		sum(k in K, p in rP, i in V, v in Vg : i <= qP)(x[k][p][i][c][v]) == qv[c];
+	AtribuicaoDeVeiculosAosDepositos:
+	forall(v in V){
+		sum(p in P)(X[p][v]) <= 1;	
 	}
-	EvitarSubTourQueNaoPassamPorPontosDeCarga:
-	/*forall(k in K, p in rP, i in V, c in V, v in Vg : c > qP && i > qP && i != c){
-		qmc[k][p][c] - qmc[k][p][i] + qme[k][p][i][c] >= (1 - x[k][p][i][c][v]) * M;	
-	}*/
-	QuantidadeDeMaterialEntreguePontosCargaEhZero: // Necessária ?
-	CaminhaoNaoTrafegaEntreBases:
-	forall(j in V : j <= qP){
-		sum(k in K, p in rP, i in V, v in Vg : i <= qP)(x[k][p][i][j][v]) == 0;
+	CustoMinimoDeViagemDoVeiculoParaChegarAoNo:
+	forall(i in I, p in P, v in V){
+		C[i] >= c[v][p][i] * (X[p][v] + Y[i][v] - 1);	
 	}
-	RestricoesDeJanelaDeTempoParaCadaCliente:
-	forall(k in K, p in rP, i in V, c in V, v in Vg : c > qP) {
-		hiac[k][p][c][v] - hc[c][v] >= (1 - x[k][p][i][c][v]) * M;
-		hp[k][c][v] + tp[p] + ti[i][c] - hiac[k][p][c][v] >= (1 - x[k][p][i][c][v]) * M;
-		hiac[k][p][c][v] + td[c] - hfac[k][p][c][v] >= (1 - x[k][p][i][c][v]) * M;
-		hfac[k][p][c][v] + tv[c][i] - hcpc[k][p][c][v] >= (1 - x[k][p][i][c][v]) * M;
+	RelacaoEntreOCustosDeViagemAteOsNosSeOsMesmosEstaoNoMesmoTour:
+	forall(i in I, j in I, v in V : i < j){
+		C[j] >= C[i] + c[v][i][j] - Mc * (1 - S[i][j]) - Mc * (2 - Y[i][v] - Y[j][v]);
+		C[i] >= C[j] + c[v][j][i] - Mc * S[i][j] - Mc * (2 - Y[i][v] - Y[j][v]);
 	}
-	QuantidadeCaminhaoSaiBaseTemQueSerMenorIgualQuantidadeDisponivel:
-	forall(k in K, p in rP, c in V, v in Vg, t in T : c > qP){
-		(hp[k][c][v] <= t) && (t <= hcpc[k][p][c][v]) => cu[k][p][t] >= 1;
+	CustoTotalDoTourDoVeiculo:
+	forall(i in I, p in P, v in V){
+		CV[v] >= C[i] + c[v][i][p] - Mc * (2 - X[p][i] - Y[i][v]);	
 	}
-	forall(p in rP, t in T){
-		sum(k in K)(cu[k][p][t]) <= kp[p];	
+	TempoDeChegadaDoNo:
+	forall(i in I, p in P, v in V){
+		T[i] >= t[v][p][i] * (X[p][v] + Y[i][v] - 1);	
 	}
-	//SeCaminhaoSaiDoPontoCargaTemQuePossuirMaterialDasViagensQueVaiAtender:
-	//SeCaminhaoChegaEmClienteTemQuePossuirMaterialSolicitadoPeloCliente:
-	NaoNegatividadeDasVariaveis:
-	forall(k in K, p in rP, i in V, j in V, v in Vg){
-		//qmc[k][p][v] >= 0;
-		//qme[k][p][i][v] >= 0;
-		hp[k][i][v] >= 0;
-		hsac[k][p][i][v] >= 0;
-		hiac[k][p][i][v] >= 0;
-		hfac[k][p][i][v] >= 0;
-		hcpc[k][p][i][v] >= 0;
+	RelacaoEntreOTempoDeChegadaDaViagemNosNohsSeOsMesmosEstaoNoMesmoTour:
+	forall(i in I, j in I, v in V : i < j){
+		T[j] >= T[i] + st[i][v] + t[v][i][j] - Mt * (1 - S[i][j]) - M * (2 - Y[i][v] - Y[j][v]);
+		T[i] >= T[j] + st[j][v] + t[v][j][i] - Mt * (S[i][j]) - M * (2 - Y[i][v] - Y[j][v]);	
+	}
+	TempoTotalDeViagemParaVeiculo:
+	forall(i in I, p in P, v in V){
+		TV[v] >= T[i] + st[i][v] + t[v][i][p] - Mt * (2 - X[p][v] - Y[i][v]);	
+	}
+	JanelaDeTempoDevidoAChegadaAdiantada:
+	forall(i in I){
+		DeltaA[i] >= a[i] - T[i];	
+	}
+	JanelaDeTempoDevidoAChegadaAtrasada:
+	forall(i in I){
+	 	DeltaB[i] >= T[i] - b[i];	
+	}
+	JanelaDeTempoDevidoAoTempoMaximoDeTrabalhoParaCadaVeiculo:
+	forall(v in V){
+		DeltaT[v] >= TV[v] - tvMax[v];	
+	}
+	RestricoesDeCapacidade:
+	forall(v in V){
+		sum(i in I)(w[i] * Y[i][v]) <= q[v] * (sum(p in P)(X[p][v]));
+	}
+	
+	forall(i in I){
+		T[i] >= 0;
+		C[i] >= 0;
+		DeltaA[i] >= 0;
+		DeltaB[i] >= 0;
+	}
+	
+	forall(v in V){
+		TV[v] >= 0;
+		CV[v] >= 0;
+		DeltaT[v] >= 0;	
 	}
 }
+
+execute{
+	for(var p in P){
+		for(var v in V){
+			for(var i in V){
+				if((X[p][v] == 1) && (Y[i][v] == 1)){
+					writeln("-------------------------------------------------------------------------------------------");
+					writeln("Nó ",i," é atendido pelo veículo ",v," do ponto de carga ",p," às ", T[i]);
+					writeln("-------------------------------------------------------------------------------------------");
+				}			
+			}		
+		}	
+	}
+}
+
+
+
+
+
+
