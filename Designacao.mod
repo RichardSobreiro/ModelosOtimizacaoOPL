@@ -8,17 +8,15 @@ range V = 1..qViagens; // Quantidade de viagens a serem alocadas para pontos de 
 
 // Parametros
 float c[V][P] = ...; // Custo de atendimento da viagem v pelo ponto de carga p (Custo dos insumos + Custo rodoviário + Custo de pessoal)
-int qvc[P] = ...; // Quantidade de viagens que cada ponto de carga p pode atender por dia
+int qvMax[P] = ...; // Quantidade de viagens que cada ponto de carga p pode atender por dia
 float cuve[P] = ...; // 
 
 // Variáveis de decisão
 dvar boolean x[V][P];
-dvar float ce[P];
 dvar int qve[P];
-dvar boolean y;
 
 // Modelo
-minimize sum(v in V, p in P)((x[v][p] * c[v][p]) + ce[p]);
+minimize sum(v in V, p in P)((x[v][p] * c[v][p]) + (cuve[p] * qve[p]));
 
 subject to{
 	TodaViagemDeveSerAlocadaParaUmPontoDeCarga:
@@ -28,11 +26,11 @@ subject to{
 	
 	SeMaisViagensQueACapacidadeDoPontoCargaSaoAtendidasCustoDeveSerPago:
 	forall(p in P){
-		//sum(v in V)(x[v][p]) - qvc[p] > 0; => ce[p] >= (//sum(v in V)(x[v][p]) - qvc[p]) * cuve[p];
-		// sum(v in V)(x[v][p]) - qvc[p] > 0;
-		// ce[p] - ((//sum(v in V)(x[v][p]) - qvc[p]) * cuve[p]) >= 0;
-		-ce[p] + ((sum(v in V)(x[v][p]) - qvc[p]) * cuve[p]) <= M * y;
-		sum(v in V)(x[v][p]) - qvc[p] <= M * (1 - y);
+		qve[p] >= qvMax[p] - sum(v in V)(x[v][p]);
+	}
+	
+	NaoNegatividade:
+	forall(p in P){
+		qve[p] >= 0;
 	}
 }
- 

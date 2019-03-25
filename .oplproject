@@ -7,10 +7,16 @@
 			<ref name="Dieta.mod" type="model">
 			</ref>
 		</config>
-		<config default="true" name="Conf_MDVHRTWSDR" category="opl">
+		<config default="false" name="Conf_MDVHRTWSDR" category="opl">
 			<ref name="MDVHRTWSDR.mod" type="model">
 			</ref>
 			<ref name="MDVHRTWSDR.dat" type="data">
+			</ref>
+		</config>
+		<config default="true" name="Conf_Designacao" category="opl">
+			<ref name="Designacao.mod" type="model">
+			</ref>
+			<ref name="Designacao.dat" type="data">
 			</ref>
 		</config>
 	</configs>

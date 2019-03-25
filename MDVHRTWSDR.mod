@@ -89,14 +89,14 @@ subject to {
 	forall(i in I, p in P, v in V){
 		TV[v] >= T[i] + st[i][v] + t[v][i][p] - Mt * (2 - X[p][v] - Y[i][v]);	
 	}
-	JanelaDeTempoDevidoAChegadaAdiantada:
+	/*JanelaDeTempoDevidoAChegadaAdiantada:
 	forall(i in I){
 		DeltaA[i] >= a[i] - T[i];	
 	}
 	JanelaDeTempoDevidoAChegadaAtrasada:
 	forall(i in I){
 	 	DeltaB[i] >= T[i] - b[i];	
-	}
+	}*/
 	JanelaDeTempoDevidoAoTempoMaximoDeTrabalhoParaCadaVeiculo:
 	forall(v in V){
 		DeltaT[v] >= TV[v] - tvMax[v];	
@@ -127,6 +127,11 @@ execute{
 				if((X[p][v] == 1) && (Y[i][v] == 1)){
 					writeln("-------------------------------------------------------------------------------------------");
 					writeln("Nó ",i," é atendido pelo veículo ",v," do ponto de carga ",p," às ", T[i]);
+					writeln("NÓ ",i);
+					writeln("HORÁRIO SOLICITADO: ", st[i][v]);
+					writeln("HORÁRIO REAL: ", T[i]);
+					writeln("ADIANTO: ", a[i]);
+					writeln("ATRASO: ", b[i]);
 					writeln("-------------------------------------------------------------------------------------------");
 				}			
 			}		
