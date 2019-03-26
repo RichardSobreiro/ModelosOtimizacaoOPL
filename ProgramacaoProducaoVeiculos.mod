@@ -43,7 +43,7 @@ subject to {
 	}
 	
 	forall(b in B){
-		sum(b in B : b > 1)(y[1][v][b]) <= 1;	
+		sum(v in I : v > 1)(y[1][v][b]) <= 1;	
 	}
 	
 	forall(h in I, p in K : h > 1){
@@ -58,7 +58,7 @@ subject to {
 	
 	forall(i in I, j in I : j > 1){
 		tfp[j] >= tfp[i] + sum(p in K)(x[i][j][p] * (dp[i][p])) + M * (sum(p in K)(x[i][j][p]) - 1);
-		tfb[i] >= 
+		tfb[j] >= tfb[i] + tfp[j] + (2 * sum(b in B)(y[i][j][b] * dv[j][b])) +  M * (sum(b in B)(y[i][j][b]) - 1);
 	}
 	
 	forall(i in I, j in I : j > 1){
