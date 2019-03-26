@@ -13,10 +13,22 @@
 			<ref name="MDVHRTWSDR.dat" type="data">
 			</ref>
 		</config>
-		<config default="true" name="Conf_Designacao" category="opl">
+		<config default="false" name="Conf_Designacao" category="opl">
 			<ref name="Designacao.mod" type="model">
 			</ref>
 			<ref name="Designacao.dat" type="data">
+			</ref>
+		</config>
+		<config default="false" name="Conf_ProgramacaoProducao" category="opl">
+			<ref name="ProgramacaoProducao.dat" type="data">
+			</ref>
+			<ref name="ProgramacaoProducao.mod" type="model">
+			</ref>
+		</config>
+		<config default="true" name="Conf_ProgramacaoProducaoVeiculos" category="opl">
+			<ref name="ProgramacaoProducaoVeiculos.dat" type="data">
+			</ref>
+			<ref name="ProgramacaoProducaoVeiculos.mod" type="model">
 			</ref>
 		</config>
 	</configs>
