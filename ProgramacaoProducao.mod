@@ -58,7 +58,7 @@ execute {
 			for(var k in K){
 				if(x[i][j][k] == 1){
 					writeln("-------------------------------------------------------------------");
-					writeln("Ponto de carga ", p, " atende a viagem ", j, " após a viagem ", i, " !");
+					writeln("Ponto de carga ", k, " atende a viagem ", j, " após a viagem ", i, " !");
 					writeln("Horário solicitado: ", hs[j], " X Horário encontrado: ", tfp[j]);
 					writeln("Atraso: ", atr[j], " X Avanço: ", avn[j]);
 					writeln("-------------------------------------------------------------------");

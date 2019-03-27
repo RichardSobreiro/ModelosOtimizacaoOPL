@@ -33,7 +33,7 @@ subject to {
 		sum(p in K, i in I)(x[i][v][p]) <= 1;
 	}
 	
-	forall(v in I : v > 1){
+	forall(v in I) {
 		sum(b in B, i in I)(y[i][v][b]) >= 1;
 		sum(b in B, i in I)(y[i][v][b]) <= 1;
 	}
@@ -52,40 +52,50 @@ subject to {
 	}
 	
 	forall(h in I, b in B : h > 1){
-		sum(i in I : i != h)(y[i][h][b]) - sum(j in I : j != h)(x[h][j][b])	>= 0;
-		sum(i in I : i != h)(y[i][h][b]) - sum(j in I : j != h)(x[h][j][b])	<= 0;
+		sum(i in I : i != h)(y[i][h][b]) - sum(j in I : j != h)(y[h][j][b])	>= 0;
+		sum(i in I : i != h)(y[i][h][b]) - sum(j in I : j != h)(y[h][j][b])	<= 0;
 	}
 	
 	forall(i in I, j in I : j > 1){
 		tfp[j] >= tfp[i] + sum(p in K)(x[i][j][p] * (dp[i][p])) + M * (sum(p in K)(x[i][j][p]) - 1);
-		tfb[j] >= tfb[i] + tfp[j] + (2 * sum(b in B)(y[i][j][b] * dv[j][b])) +  M * (sum(b in B)(y[i][j][b]) - 1);
 	}
 	
-	forall(i in I, j in I : j > 1){
-		tfb[i] >= 0 ; 		
+	forall(i in I, j in I: j > 1){
+		tfb[j] >= tfb[i] + tfp[j] + (2 * sum(b in B, p in K)(y[i][j][b] * dv[j][p])) +  M * (sum(b in B)(y[i][j][b]) - 1);	
 	}
 	
 	AtrasoAvancoDasVaigens:
 	forall(i in I){
-		atr[i] >= tfp[i] - hs[i];
-		avn[i] >= hs[i] - tfp[i];
+		atr[i] >= tfb[i] - hs[i];
+		avn[i] >= hs[i] - tfb[i];
 	}
 	NaoNegatividadeDasVariaveisReais:
 	forall(i in I){
 		atr[i] >= 0;
-		avn[i] >= 0;	
+		avn[i] >= 0;
+		tfp[i] >= 0;
+		tfb[i] >= 0;	
 	}
 }
 
 execute {
 	for(var i in I){
 		for(var j in I){
-			for(var k in K){
-				if(x[i][j][k] == 1){
+			for(var b in B){
+				if(y[i][j][b] == 1){
 					writeln("-------------------------------------------------------------------");
-					writeln("Ponto de carga ", p, " atende a viagem ", j, " após a viagem ", i, " !");
-					writeln("Horário solicitado: ", hs[j], " X Horário encontrado: ", tfp[j]);
-					writeln("Atraso: ", atr[j], " X Avanço: ", avn[j]);
+					writeln("Betoneira ", b, " atende a viagem ", j, " após a viagem ", i, " !");
+					writeln("1 - Horário final da viagem ",i ,": ", tfb[i]);
+					writeln("2 - Horário solicitado da viagem ",i ,": ", hs[i]);
+					writeln("1 - Horário de pesagem da viagem ",i , ": ", tfp[i]);
+					writeln("2 - Horário final da viagem ",j ,": ", tfb[j]);
+					writeln("2 - Horário solicitado da viagem ",j ,": ", hs[j]);
+					writeln("2 - Horário de pesagem da viagem ",j , ": ", tfp[j]);
+					/*writeln("x[",i,"][",j,"][", 1,"] = ", x[i][j][1]);
+					//writeln("Tempo entre ponto carga e ",j ,": ",((2 * dv[j][b])));
+					writeln("tfb[i](", i,") + tfp[j](", j, ") + Janela de j (",j , ") : ", tfb[i] + tfp[j] + (2 * dv[j][1]));
+					writeln("Horário solicitado: ", hs[j], " X Horário encontrado: ", tfb[j]);
+					writeln("Atraso: ", atr[j], " X Avanço: ", avn[j]);*/
 					writeln("-------------------------------------------------------------------");
 				}			
 			}	
