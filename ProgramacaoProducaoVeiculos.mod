@@ -27,45 +27,49 @@ dvar float tfb[I]; // Instante final de antedimento da viagem v
 dvar float hcc[I]; // Horario de chegada no cliente
 dvar boolean x[I][I][K]; // Se a viagem v precede imediatamente a viagem v no ponto de carga p
 dvar boolean y[I][I][B]; // Se a betoneira b atende a viagem j após a viagem i
-dvar float atr[I]; // Atraso da viagem v
-dvar float avn[I]; // Avanço da viagem v
+
+dvar float atrc[I]; // Atraso da viagem v
+dvar float avnc[I]; // Avanço da viagem v
+dvar float atrp[I]; // Atraso na pesagem da viagem v
+dvar float avnp[I]; // Avanço na pesagem da viagem v
 
 dvar boolean vp[I][K]; // Se a viagem v é atendida pelo ponto de carga p
 dvar int qve[K]; // Custo de atendimento de viagens extras
 
 // Modelo
 
-minimize sum(v in I)(atr[v] + avn[v]) + sum(v in I, p in K)((vp[v][p] * c[v][p]) + (cuve[p] * qve[p]));;
+minimize sum(v in I)(atrc[v] + avnc[v] + atrp[v] + avnp[v]); //+ sum(v in I, p in K)((vp[v][p] * c[v][p]) + (cuve[p] * qve[p]));
 
 subject to {
 	TodaViagemDeveSerAlocadaParaUmPontoDeCarga:
 	forall(v in I){
-		sum(p in K)(vp[v][p]) == 1;	
+		sum(p in K)(vp[v][p]) >= 1;
+		sum(p in K)(vp[v][p]) <= 1;	
 	}
 	
-	SeMaisViagensQueACapacidadeDoPontoCargaSaoAtendidasCustoDeveSerPago:
+	/*SeMaisViagensQueACapacidadeDoPontoCargaSaoAtendidasCustoDeveSerPago:
 	forall(p in K){
 		qve[p] >= qvMax[p] - sum(v in I)(vp[v][p]);
-	}
-
+	}*/
+	ViagemNaoPodeSucederElaMesmaNaPesagem:
 	forall(i in I, j in I, k in K : i == j){
 		x[i][j][k] <= 0;					
 	}
-
+	TodaViagemDeveSucederAlgumaViagemNaPesagemExcetoAPrimeira:
 	forall(v in I : v > 1){
 		sum(p in K, i in I)(x[i][v][p]) >= 1;
 		sum(p in K, i in I)(x[i][v][p]) <= 1;
 	}
-	
-	forall(v in I) {
+	TodaViagemDeveSucederAlgumaViagemApenasUmaViagemEmUmaBetoneira:
+	forall(v in I : v > 1) {
 		sum(b in B, i in I)(y[i][v][b]) >= 1;
 		sum(b in B, i in I)(y[i][v][b]) <= 1;
 	}
-	
+	ViagemFicticia1AntecedeAlgumaViagemEmCadaPontoDeCarga:
 	forall(p in K){
 		sum(v in I : v > 1)(x[1][v][p]) <= 1;	
 	}
-	
+	ViagemFicticia1AntecedeAlgumaViagemEmCadaBetoneira:
 	forall(b in B){
 		sum(v in I : v > 1)(y[1][v][b]) <= 1;	
 	}
@@ -90,25 +94,32 @@ subject to {
 	}
 	SequenciamentoDoAtendimentoDeViagensPelaMesmaBetoneira:
 	forall(i in I, j in I: j > 1){
-		tfb[j] >= tfb[i] + tfp[j] + (2 * sum(b in B, p in K)(y[i][j][b] * dv[j][p])) +  M * (sum(b in B)(y[i][j][b]) - 1);	
-		tfp[j] >= tfb[i] + sum(p in K)(x[i][j][p] * (dp[i][p]))  +  M * (sum(b in B)(y[i][j][b]) - 1);   
+		tfb[j] >= tfb[i] + tfp[j] + (2 * sum(p in K)(vp[j][p] * dv[j][p])) +  M * (sum(b in B)(y[i][j][b]) - 1);	
+		tfp[j] >= tfb[i] + sum(p in K)(x[i][j][p] * (dp[i][p]))  +  M * (sum(b in B)(y[i][j][b]) - 1);
+		hcc[j] >= tfb[j] - sum(p in K)(vp[j][p] * (dv[j][p] + td[j]));
+		hcc[j] <= tfb[j] - sum(p in K)(vp[j][p] * (dv[j][p] + td[j]));
 	}
 	
-	forall(v in I){
-		M * sum(p in K)(vp[v][p]) >= sum(i in I, p in K)(x[i][v][p]);	
+	forall(v in I, p in K){
+		M * vp[v][p] >= sum(i in I)(x[i][v][p]);	
 	}
 	
 	AtrasoAvancoDasVaigens:
 	forall(i in I){
-		atr[i] >= tfb[i] - sum(p in K)(dp[i][p] * vp[i][p]) - td[i] - hs[i];
-		avn[i] >= hs[i] - tfb[i] + sum(p in K)(dp[i][p] * vp[i][p]) + td[i];
+		atrc[i] >= hcc[i] - hs[i];
+		avnc[i] >= hs[i] - hcc[i];
+		atrp[i] >= hcc[i] - sum(p in K)((dv[i][p] + dp[i][p]) * vp[i][p]) - tfp[i];
+		avnc[i] >= sum(p in K)((dv[i][p] + dp[i][p]) * vp[i][p]) + tfp[i] - hcc[i]; 
 	}
 	NaoNegatividadeDasVariaveisReais:
 	forall(i in I){
-		atr[i] >= 0;
-		avn[i] >= 0;
+		atrc[i] >= 0;
+		avnc[i] >= 0;
+		atrp[i] >= 0;
+		avnp[i] >= 0;
 		tfp[i] >= 0;
 		tfb[i] >= 0;
+		hcc[i] >= 0;
 	}
 	NaoNegatividade:
 	forall(p in K){
@@ -154,8 +165,8 @@ execute {
 				if(y[i][j][b] == 1){
 					for(var ii in I){
 						for(var p in K){
-							if(x[ii][j][p] == 1){
-								Viagens.add(tfb[j], j, i, p, b, tfp[j], hs[j], atr[j], avn[j]);							
+							if(vp[j][p] == 1){
+								Viagens.add(tfb[j], j, i, p, b, tfp[j], hs[j], atrc[j], avnc[j]);							
 							}							
 						}					
 					}								
@@ -181,13 +192,14 @@ execute {
 			if(viagem.betoneira == b){
 				writeln("-------------------------------------------------------------------");			
 				writeln("VIAGEM ", viagem.viagem);
-				writeln("Finalizou pesagem: ", viagem.horarioFinalPesagem);
-				writeln("Horario final pesagem + tempo trajeto ate cliente: ", viagem.horarioFinalPesagem + dp[viagem.viagem][viagem.pontoCarga]);
-				writeln("Horario solicitado pelo cliente: ", hs[viagem.viagem]);
-				writeln("Horario que deveria finalizar: ", viagem.horarioFinalPesagem + 2 * dp[viagem.viagem][viagem.pontoCarga]);
-				writeln("Horario que finalizou: ", viagem.horarioFinalAtendimento);	
-				writeln("Atraso: ", viagem.atraso);
-				writeln("Avanco: ", viagem.avanco);
+				writeln("Horario Real Final de Pesagem: ", tfp[viagem.viagem]);
+				writeln("Horario Otimo Final de Pesagem: ", hs[viagem.viagem] - dv[viagem.viagem][viagem.pontoCarga]);
+				writeln("Horario Solicitado: ", hs[viagem.viagem]);
+				writeln("Horario Real: ", hcc[viagem.viagem]);	
+				writeln("Atraso Pesagem: ", atrp[viagem.viagem]);
+				writeln("Avanco Pesagem: ", avnp[viagem.viagem]);
+				writeln("Atraso Chegada Cliente: ", atrc[viagem.viagem]);
+				writeln("Avanco Chegada Cliente: ", avnc[viagem.viagem]);
 				
 				writeln("-------------------------------------------------------------------");		
 			}		
