@@ -38,7 +38,7 @@ dvar int qve[K]; // Custo de atendimento de viagens extras
 
 // Modelo
 
-minimize sum(v in I)(atrc[v] + avnc[v] + atrp[v] + avnp[v]); //+ sum(v in I, p in K)((vp[v][p] * c[v][p]) + (cuve[p] * qve[p]));
+minimize sum(v in I)(atrc[v] + avnc[v] + atrp[v] + avnp[v]) + sum(v in I, p in K)((vp[v][p] * c[v][p]) + (cuve[p] * qve[p]));
 
 subject to {
 	TodaViagemDeveSerAlocadaParaUmPontoDeCarga:
@@ -47,10 +47,10 @@ subject to {
 		sum(p in K)(vp[v][p]) <= 1;	
 	}
 	
-	/*SeMaisViagensQueACapacidadeDoPontoCargaSaoAtendidasCustoDeveSerPago:
+	SeMaisViagensQueACapacidadeDoPontoCargaSaoAtendidasCustoDeveSerPago:
 	forall(p in K){
 		qve[p] >= qvMax[p] - sum(v in I)(vp[v][p]);
-	}*/
+	}
 	ViagemNaoPodeSucederElaMesmaNaPesagem:
 	forall(i in I, j in I, k in K : i == j){
 		x[i][j][k] <= 0;					
@@ -60,36 +60,37 @@ subject to {
 		sum(p in K, i in I)(x[i][v][p]) >= 1;
 		sum(p in K, i in I)(x[i][v][p]) <= 1;
 	}
+	ViagemFicticia1AntecedeAlgumaViagemEmCadaPontoDeCarga:
+	forall(p in K){
+		sum(v in I : v > 1)(x[1][v][p]) >= 1;
+		sum(v in I : v > 1)(x[1][v][p]) <= 1;
+	}
 	TodaViagemDeveSucederAlgumaViagemApenasUmaViagemEmUmaBetoneira:
 	forall(v in I : v > 1) {
 		sum(b in B, i in I)(y[i][v][b]) >= 1;
 		sum(b in B, i in I)(y[i][v][b]) <= 1;
 	}
-	ViagemFicticia1AntecedeAlgumaViagemEmCadaPontoDeCarga:
-	forall(p in K){
-		sum(v in I : v > 1)(x[1][v][p]) <= 1;	
-	}
 	ViagemFicticia1AntecedeAlgumaViagemEmCadaBetoneira:
-	forall(b in B){
-		sum(v in I : v > 1)(y[1][v][b]) <= 1;	
+	forall(b in B) {
+		sum(v in I : v > 1)(y[1][v][b]) >= 1;
+		sum(v in I : v > 1)(y[1][v][b]) <= 1;
 	}
-	
+	SomatorioDasViagensQueAntecedemUmaViagemNaPesagemEmUmPontoDeCargaDeveSerIgualAoSomatorioDasViagensQueSucedem:	
 	forall(h in I, p in K : h > 1){
 		sum(i in I : i != h)(x[i][h][p]) - sum(j in I : j != h)(x[h][j][p])	>= 0;
 		sum(i in I : i != h)(x[i][h][p]) - sum(j in I : j != h)(x[h][j][p])	<= 0;
 	}
-	
+	SomatorioDasViagensQueAntecedemUmaViagemEmUmaBetoneiraDeveSerIgualAoDasQueSucedem:
 	forall(h in I, b in B : h > 1){
 		sum(i in I : i != h)(y[i][h][b]) - sum(j in I : j != h)(y[h][j][b])	>= 0;
 		sum(i in I : i != h)(y[i][h][b]) - sum(j in I : j != h)(y[h][j][b])	<= 0;
 	}
 	SequenciamentoDePesagemDeBetoneirasNoMesmoPontoDeCarga:
 	forall(i in I, j in I : j > 1){
-		tfp[j] >= tfp[i] + sum(p in K)(vp[j][p] * dp[j][p]) + M * (sum(p in K)(x[i][j][p]) - 1);
-		hs[j] - tfp[j] <= tmaxvc[j];
+		tfp[j] >= tfp[i] + sum(p in K)(vp[j][p] * dp[j][p]) + (M * (sum(p in K)(x[i][j][p]) - 1));
 	}
 	GarantiaTempoDeVidaDoConcreto:
-	forall(i in I, j in I){
+	forall(j in I){
 		hs[j] - tfp[j] <= tmaxvc[j];
 	}
 	SequenciamentoDoAtendimentoDeViagensPelaMesmaBetoneira:
@@ -99,7 +100,7 @@ subject to {
 		hcc[j] >= tfb[j] - sum(p in K)(vp[j][p] * (dv[j][p] + td[j]));
 		hcc[j] <= tfb[j] - sum(p in K)(vp[j][p] * (dv[j][p] + td[j]));
 	}
-	
+	SeAViagemSucedeAlgumaViagemEmUmPontoDeCargaElaDeveSerAtribuidaAoPontoDeCarga:
 	forall(v in I, p in K){
 		M * vp[v][p] >= sum(i in I)(x[i][v][p]);	
 	}
@@ -132,7 +133,7 @@ tuple Viagem {
 	int viagem;
 	int viagemAtecessorPesagem;
 	int pontoCarga;
-	int betoneira;
+	key int betoneira;
 	float horarioFinalPesagem;
 	float horarioSolicitado;
 	float atraso;
