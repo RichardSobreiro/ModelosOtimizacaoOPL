@@ -87,7 +87,8 @@ subject to {
 	}
 	SequenciamentoDePesagemDeBetoneirasNoMesmoPontoDeCarga:
 	forall(i in I, j in I : j > 1){
-		tfp[j] >= tfp[i] + sum(p in K)(vp[j][p] * dp[j][p]) + (M * (sum(p in K)(x[i][j][p]) - 1));
+		tfp[j] >= tfp[i] + sum(p in K)(vp[j][p] * dp[j][p]) + 
+			(M * (sum(p in K)(x[i][j][p]) - 1));
 	}
 	GarantiaTempoDeVidaDoConcreto:
 	forall(j in I){
@@ -95,8 +96,12 @@ subject to {
 	}
 	SequenciamentoDoAtendimentoDeViagensPelaMesmaBetoneira:
 	forall(i in I, j in I: j > 1){
-		tfb[j] >= tfb[i] + tfp[j] + (2 * sum(p in K)(vp[j][p] * dv[j][p])) +  M * (sum(b in B)(y[i][j][b]) - 1);	
-		tfp[j] >= tfb[i] + sum(p in K)(x[i][j][p] * (dp[i][p]))  +  M * (sum(b in B)(y[i][j][b]) - 1);
+		tfb[j] >= tfb[i] + 
+			sum(p in K)(vp[j][p] * dp[j][p]) + 
+			(2 * sum(p in K)(vp[j][p] * dv[j][p])) + 
+			td[j] +  
+			(M * (sum(b in B)(y[i][j][b]) - 1));	
+		//tfp[j] >= tfb[i] + sum(p in K)(x[i][j][p] * (dp[i][p]))  +  M * (sum(b in B)(y[i][j][b]) - 1);
 		hcc[j] >= tfb[j] - sum(p in K)(vp[j][p] * (dv[j][p] + td[j]));
 		hcc[j] <= tfb[j] - sum(p in K)(vp[j][p] * (dv[j][p] + td[j]));
 	}
@@ -176,7 +181,30 @@ execute {
 		}	
 	}
 	
-	for(var p in K){
+	writeln("-------------------------------------------------------------------");
+	for(var b in B){
+		writeln("TRAJETO BETONEIRA ", b);
+		for(var viagem in Viagens){
+			if(viagem.betoneira == b){
+				writeln("-------------------------------------------------------------------");			
+				writeln("VIAGEM ", viagem.viagem);
+				writeln("Inicio: ", tfp[viagem.viagem] - dp[viagem.viagem][viagem.pontoCarga]);tfb
+				writeln("Fim: ", tfb[viagem.viagem]);
+				writeln("Horario Solicitado: ", hs[viagem.viagem]);
+				writeln("Horario Real: ", hcc[viagem.viagem]);	
+				writeln("Horario Real Final de Pesagem: ", tfp[viagem.viagem]);
+				writeln("Horario Otimo Final de Pesagem: ", hs[viagem.viagem] - dv[viagem.viagem][viagem.pontoCarga] - dp[viagem.viagem][viagem.pontoCarga]);
+				writeln("Atraso Pesagem: ", atrp[viagem.viagem]);
+				writeln("Avanco Pesagem: ", avnp[viagem.viagem]);
+				writeln("Atraso Chegada Cliente: ", atrc[viagem.viagem]);
+				writeln("Avanco Chegada Cliente: ", avnc[viagem.viagem]);
+				writeln("-------------------------------------------------------------------");		
+			}		
+		}
+	}
+	writeln("-------------------------------------------------------------------");
+	
+	/*for(var p in K){
 		writeln("-------------------------------------------------------------------");	
 		writeln("PONTO CARGA ", p);
 		for(var pesagem in Pesagens){
@@ -206,7 +234,7 @@ execute {
 			}		
 		}
 	}
-	writeln("-------------------------------------------------------------------");
+	writeln("-------------------------------------------------------------------");*/
 	
 }
 
