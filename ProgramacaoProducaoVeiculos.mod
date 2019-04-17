@@ -38,7 +38,8 @@ dvar int qve[K]; // Custo de atendimento de viagens extras
 
 // Modelo
 
-minimize sum(v in I)(atrc[v] + avnc[v] + atrp[v] + avnp[v]) + sum(v in I, p in K)((vp[v][p] * c[v][p]) + (cuve[p] * qve[p]));
+minimize sum(v in I)(atrc[v] + avnc[v] + atrp[v] + avnp[v]) + 
+	sum(v in I, p in K)((vp[v][p] * c[v][p]) + (cuve[p] * qve[p]));
 
 subject to {
 	TodaViagemDeveSerAlocadaParaUmPontoDeCarga:
@@ -46,7 +47,6 @@ subject to {
 		sum(p in K)(vp[v][p]) >= 1;
 		sum(p in K)(vp[v][p]) <= 1;	
 	}
-	
 	SeMaisViagensQueACapacidadeDoPontoCargaSaoAtendidasCustoDeveSerPago:
 	forall(p in K){
 		qve[p] >= qvMax[p] - sum(v in I)(vp[v][p]);
@@ -65,7 +65,7 @@ subject to {
 		sum(v in I : v > 1)(x[1][v][p]) >= 1;
 		sum(v in I : v > 1)(x[1][v][p]) <= 1;
 	}
-	TodaViagemDeveSucederAlgumaViagemApenasUmaViagemEmUmaBetoneira:
+	TodaViagemDeveSucederApenasUmaViagemEmUmaBetoneiraExcetoAPrimeira:
 	forall(v in I : v > 1) {
 		sum(b in B, i in I)(y[i][v][b]) >= 1;
 		sum(b in B, i in I)(y[i][v][b]) <= 1;
@@ -87,7 +87,8 @@ subject to {
 	}
 	SequenciamentoDePesagemDeBetoneirasNoMesmoPontoDeCarga:
 	forall(i in I, j in I : j > 1){
-		tfp[j] >= tfp[i] + sum(p in K)(vp[j][p] * dp[j][p]) + 
+		tfp[j] >= tfp[i] + 
+			sum(p in K)(vp[j][p] * dp[j][p]) + 
 			(M * (sum(p in K)(x[i][j][p]) - 1));
 	}
 	GarantiaTempoDeVidaDoConcreto:
@@ -101,7 +102,6 @@ subject to {
 			(2 * sum(p in K)(vp[j][p] * dv[j][p])) + 
 			td[j] +  
 			(M * (sum(b in B)(y[i][j][b]) - 1));	
-		//tfp[j] >= tfb[i] + sum(p in K)(x[i][j][p] * (dp[i][p]))  +  M * (sum(b in B)(y[i][j][b]) - 1);
 		hcc[j] >= tfb[j] - sum(p in K)(vp[j][p] * (dv[j][p] + td[j]));
 		hcc[j] <= tfb[j] - sum(p in K)(vp[j][p] * (dv[j][p] + td[j]));
 	}
