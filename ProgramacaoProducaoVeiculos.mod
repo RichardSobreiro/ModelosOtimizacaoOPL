@@ -102,8 +102,9 @@ subject to {
 			(2 * sum(p in K)(vp[j][p] * dv[j][p])) + 
 			td[j] +  
 			(M * (sum(b in B)(y[i][j][b]) - 1));	
-		hcc[j] >= tfb[j] - sum(p in K)(vp[j][p] * (dv[j][p] + td[j]));
-		hcc[j] <= tfb[j] - sum(p in K)(vp[j][p] * (dv[j][p] + td[j]));
+			
+		hcc[j] >= tfb[j] - sum(p in K)(vp[j][p] * dv[j][p]) - td[j];
+		hcc[j] <= tfb[j] - sum(p in K)(vp[j][p] * dv[j][p]) - td[j];
 	}
 	SeAViagemSucedeAlgumaViagemEmUmPontoDeCargaElaDeveSerAtribuidaAoPontoDeCarga:
 	forall(v in I, p in K){
@@ -113,9 +114,16 @@ subject to {
 	AtrasoAvancoDasVaigens:
 	forall(i in I){
 		atrc[i] >= hcc[i] - hs[i];
+		atrc[i] <= hcc[i] - hs[i];
+		
 		avnc[i] >= hs[i] - hcc[i];
+		avnc[i] <= hs[i] - hcc[i];
+		
 		atrp[i] >= hcc[i] - sum(p in K)((dv[i][p] + dp[i][p]) * vp[i][p]) - tfp[i];
+		atrp[i] <= hcc[i] - sum(p in K)((dv[i][p] + dp[i][p]) * vp[i][p]) - tfp[i];
+		
 		avnc[i] >= sum(p in K)((dv[i][p] + dp[i][p]) * vp[i][p]) + tfp[i] - hcc[i]; 
+		avnc[i] <= sum(p in K)((dv[i][p] + dp[i][p]) * vp[i][p]) + tfp[i] - hcc[i];
 	}
 	NaoNegatividadeDasVariaveisReais:
 	forall(i in I){
@@ -145,25 +153,10 @@ tuple Viagem {
 	float avanco;
 };
 
-tuple Pesagem {
-	int pontoCarga;
-	int viagem;
-	key float horarioFinalPesagem;
-};
-
 sorted {Viagem} Viagens = {};
-sorted {Pesagem} Pesagens = {}; 
 
 execute {
-	for(var i in I){
-		for(var j in I){
-			for(var p in K){
-				if(x[i][j][p] == 1){
-					Pesagens.add(p, j, tfp[j]);							
-				}			
-			}		
-		}	
-	}
+	
 
 	for(var i in I){
 		for(var j in I){
@@ -188,7 +181,7 @@ execute {
 			if(viagem.betoneira == b){
 				writeln("-------------------------------------------------------------------");			
 				writeln("VIAGEM ", viagem.viagem);
-				writeln("Inicio: ", tfp[viagem.viagem] - dp[viagem.viagem][viagem.pontoCarga]);tfb
+				writeln("Inicio: ", tfb[viagem.viagem] - (2*dv[viagem.viagem][viagem.pontoCarga]) - dp[viagem.viagem][viagem.pontoCarga] - td[viagem.viagem]);
 				writeln("Fim: ", tfb[viagem.viagem]);
 				writeln("Horario Solicitado: ", hs[viagem.viagem]);
 				writeln("Horario Real: ", hcc[viagem.viagem]);	
@@ -204,38 +197,53 @@ execute {
 	}
 	writeln("-------------------------------------------------------------------");
 	
-	/*for(var p in K){
-		writeln("-------------------------------------------------------------------");	
-		writeln("PONTO CARGA ", p);
-		for(var pesagem in Pesagens){
-			if(pesagem.pontoCarga == p){
-				writeln("Viagem ", pesagem.viagem, " finaliza pesagem as ", pesagem.horarioFinalPesagem);								
-			}						
-		}
-		writeln("-------------------------------------------------------------------");		
+}
+
+execute {
+	for(var i in I){
+		for(var j in I){
+			for(var b in B){
+				if(y[i][j][b] == 1){
+					for(var ii in I){
+						for(var p in K){
+							if(vp[j][p] == 1){
+								Viagens.add(tfb[j], j, i, p, b, tfp[j], hs[j], atrc[j], avnc[j]);							
+							}							
+						}					
+					}								
+				}			
+			}		
+		}	
 	}
-	writeln("-------------------------------------------------------------------");
+
+
+	var f = new IloOplOutputFile("C:\\ArtigoSBPO\\API.ArtigoSBPO\\ResultFile\\Result.json");
+	f.writeln("{");
+	f.writeln("	\"viagens\": [");
 	for(var b in B){
-		writeln("TRAJETO BETONEIRA ", b);
 		for(var viagem in Viagens){
 			if(viagem.betoneira == b){
-				writeln("-------------------------------------------------------------------");			
-				writeln("VIAGEM ", viagem.viagem);
-				writeln("Horario Real Final de Pesagem: ", tfp[viagem.viagem]);
-				writeln("Horario Otimo Final de Pesagem: ", hs[viagem.viagem] - dv[viagem.viagem][viagem.pontoCarga]);
-				writeln("Horario Solicitado: ", hs[viagem.viagem]);
-				writeln("Horario Real: ", hcc[viagem.viagem]);	
-				writeln("Atraso Pesagem: ", atrp[viagem.viagem]);
-				writeln("Avanco Pesagem: ", avnp[viagem.viagem]);
-				writeln("Atraso Chegada Cliente: ", atrc[viagem.viagem]);
-				writeln("Avanco Chegada Cliente: ", avnc[viagem.viagem]);
-				
-				writeln("-------------------------------------------------------------------");		
+				f.writeln("	{");
+				f.writeln("		\"Betoneira\": ", viagem.betoneira, ",");			
+				f.writeln("		\"Viagem\": ", viagem.viagem, ",");
+				f.writeln("		\"PontoCarga\": ", viagem.pontoCarga, ",");
+				f.writeln("		\"Inicio\": ", tfp[viagem.viagem] - dp[viagem.viagem][viagem.pontoCarga], ",");
+				f.writeln(" 	\"Fim\": ", tfb[viagem.viagem], ",");
+				f.writeln(" 	\"HorarioSolicitado\": ", hs[viagem.viagem], ",");
+				f.writeln(" 	\"HorarioReal\": ", hcc[viagem.viagem], ",");	
+				f.writeln(" 	\"HorarioRealFinalPesagem\": ", tfp[viagem.viagem], ",");
+				f.writeln(" 	\"HorarioOtimoFinalPesagem\": ", hs[viagem.viagem] - dv[viagem.viagem][viagem.pontoCarga] - dp[viagem.viagem][viagem.pontoCarga], ",");
+				f.writeln(" 	\"AtrasoPesagem\": ", atrp[viagem.viagem], ",");
+				f.writeln(" 	\"AvancoPesagem\": ", avnp[viagem.viagem], ",");
+				f.writeln(" 	\"AtrasoChegadaCliente\": ", atrc[viagem.viagem], ",");
+				f.writeln(" 	\"AvancoChegadaCliente\": ", avnc[viagem.viagem]);
+				f.writeln("	},");			
 			}		
 		}
 	}
-	writeln("-------------------------------------------------------------------");*/
-	
+	f.writeln("]");
+	f.writeln("}");	
+	f.close();
 }
 
 
