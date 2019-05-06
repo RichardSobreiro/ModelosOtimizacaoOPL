@@ -2,12 +2,12 @@ int qConcreto = ...; // Quantidade de tipos de concreto
 int qPeriodo = ...; // Quantidade de dias de planejamento
 int qPontosCarga = ...; // Quantidade de pontos de carga
 int qCimento = ...; // Quantidade de cimentos
-int qAdicao = ...;
-int qAgregadoMiudo = ...;
-int qAgregadoGraudo = ...;
-int qAgua = ...;
-int qAditivo = ...;
-int qMateriaisAdicionais = ...;
+int qAdicao = ...; // Quantidade de adições
+int qAgregadoMiudo = ...; // Quantidade de agregados miudos
+int qAgregadoGraudo = ...; // Quantidade de agregaados graudos
+int qAgua = ...; // Quantidade de água
+int qAditivo = ...; // Quantidade de aditivos
+int qMateriaisAdicionais = ...; // Quantidade de materiais adicionais
 
 // Conjuntos
 range C = 1..qConcreto;
@@ -61,7 +61,7 @@ dvar float xa[A][P][T]; // Quantidade de água a a ser comprada no ponto de carga
 dvar float xav[AV][P][T]; // Quantidade de aditivo av a ser comprada no ponto de carga p no dia t
 dvar float xma[MA][P][T]; // Quantidade de material adicional ma a ser comprada no ponto de carga p no dia t
  
-dvar float ect[CT][P][T]; // Estoque do cimento c no período t
+dvar float ect[CT][P][T]; // Estoque do cimento c no dia t
 dvar float ead[AD][P][T]; // Estoque de adição ad no ponto de carga p no dia t
 dvar float eam[AM][P][T]; // Estoque de areia am no ponto de carga p no dia t
 dvar float eag[AG][P][T]; // Estoque de brita ag no ponto de carga p no dia t
@@ -151,7 +151,8 @@ subject to {
 	
 	CustoDoConcreto:
 	forall(c in C, p in P, t in T, ct in CT, ad in AD, am in AM, ag in AG, a in A, av in AV, ma in MA) {
-		cc[c][p][t] >= (qct[ct][c] * xc[c][p][t] * cct[ct][p][t]) + 
+		cc[c][p][t] >= 
+			(qct[ct][c] * xc[c][p][t] * cct[ct][p][t]) + 
 			(qad[ad][c] * xc[c][p][t] * cad[ad][p][t]) + 
 			(qam[am][c] * xc[c][p][t] * cam[am][p][t]) + 
 			(qag[ag][c] * xc[c][p][t] * cag[ag][p][t]) + 
