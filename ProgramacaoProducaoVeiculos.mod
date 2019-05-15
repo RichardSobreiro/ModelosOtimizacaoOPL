@@ -50,12 +50,6 @@ minimize sum(v in I)(atrc[v] + avnc[v] + atrp[v] + avnp[v]) +
 	(cuve[p] * qve[p])); 
 
 subject to {
-	/*EliminarSubTours:
-	forall(b in B, j in I : j > 1) {
-		forall(i in I : i > 1 && i != j) {
-			M * y[i][j][b] <= v[j][b] - v[i][b] - 1 + M;
-		}
-	}*/
 	SeMaisViagensQueACapacidadeDoPontoCargaSaoAtendidasCustoDeveSerPago:
 	forall(p in K){
 		qve[p] >= sum(v in I)(vp[v][p]) - qvMax[p];
@@ -69,25 +63,26 @@ subject to {
 		y[i][j][b] <= 0;					
 	}
 	TodaViagemDeveSucederNoMaximoAlgumaViagemNaPesagemExcetoAPrimeira:
-	forall(v in I : v > 1){
-		//sum(p in K, i in I)(x[i][v][p]) >= 1;
-		sum(p in K, i in I)(x[i][v][p]) <= 1;
+	forall(p in K, v in I){
+		//sum(i in I : i != v)(x[i][v][p]) >= 1;
+		sum(i in I : i != v)(x[i][v][p]) <= 1;
 	}
 	TodaViagemDeveAntecederNoMaximoAlgumaViagemNaPesagemExcetoAPrimeira:
-	forall(v in I : v > 1){
+	forall(p in K, v in I){
 		//sum(p in K, i in I)(x[i][v][p]) >= 1;
-		sum(p in K, i in I)(x[v][i][p]) <= 1;
+		sum(i in I)(x[v][i][p]) <= 1;
 	}
 	TodaViagemDeveSucederNoMaximoApenasUmaViagemEmUmaBetoneiraExcetoAPrimeira:
-	forall(v in I : v > 1) {
+	forall(b in B, v in I) {
 		//sum(b in B, i in I)(y[i][v][b]) >= 1;
-		sum(b in B, i in I)(y[i][v][b]) <= 1;
+		sum(i in I)(y[i][v][b]) <= 1;
 	}
 	TodaViagemDeveAntecederNoMaximoApenasUmaViagemEmUmaBetoneiraExcetoAPrimeira:
-	forall(v in I : v > 1) {
+	forall(v in I, b in B) {
 		//sum(b in B, i in I)(y[i][v][b]) >= 1;
-		sum(b in B, i in I)(y[v][i][b]) <= 1;
+		sum(i in I)(y[v][i][b]) <= 1;
 	}
+	//sum(i in I)(y[2][i][1]) <= 1;
 	ViagemFicticia1AntecedeNoMaximoAlgumaViagemEmCadaPontoDeCarga:
 	forall(p in K){	
 		//sum(v in I : v > 1)(x[1][v][p]) >= 1;
@@ -97,16 +92,6 @@ subject to {
 	forall(b in B) {
 		//sum(v in I : v > 1)(y[1][v][b]) >= 1;
 		sum(v in I : v > 1)(y[1][v][b]) <= 1;
-	}
-	SomatorioDasViagensQueAntecedemUmaViagemNaPesagemEmUmPontoDeCargaDeveSerIgualAoSomatorioDasViagensQueSucedem:	
-	forall(h in I, p in K : h > 1){
-		//sum(i in I : i != h)(x[i][h][p]) - sum(j in I : j != h)(x[h][j][p])	>= 0;
-		sum(i in I : i != h)(x[i][h][p]) - sum(j in I : j != h)(x[h][j][p])	<= 0;
-	}
-	SomatorioDasViagensQueAntecedemUmaViagemEmUmaBetoneiraDeveSerIgualAoDasQueSucedem:
-	forall(h in I, b in B : h > 1){
-		sum(i in I : i != h)(y[i][h][b]) - sum(j in I : j != h)(y[h][j][b])	>= 0;
-		sum(i in I : i != h)(y[i][h][b]) - sum(j in I : j != h)(y[h][j][b])	<= 0;
 	}
 	SequenciamentoDePesagemDeBetoneirasNoMesmoPontoDeCarga:
 	forall(p in K, i in I, j in I : j > 1){
@@ -120,13 +105,18 @@ subject to {
 	}
 	SequenciamentoDoAtendimentoDeViagensPelaMesmaBetoneira:
 	forall(b in B, i in I, j in I: j > 1){
-		(M * (1 - (y[i][j][b]))) + tfb[j] >= tfb[i] + 
-			sum(p in K)(vp[j][p] * dp[j][p]) + 
-			(2 * sum(p in K)(vp[j][p] * dv[j][p])) + 
-			td[j];	
+		(M * (1 - y[i][j][b])) + tfb[j] >= tfb[i] + 
+			sum(p in K)(vp[j][p] * (dp[j][p] + (2 * dv[j][p]))) + 
+				td[j];	
 			
 		hcc[j] >= tfb[j] - sum(p in K)(vp[j][p] * dv[j][p]) - td[j];
 		hcc[j] <= tfb[j] - sum(p in K)(vp[j][p] * dv[j][p]) - td[j];
+	}
+	EliminarSubTours:
+	forall(b in B, j in I : j > 1) {
+		forall(i in I :i != j) {
+			M * y[i][j][b] <= v[j][b] - v[i][b] - 1 + M;
+		}
 	}
 	SeAViagemSucedeAlgumaViagemEmUmPontoDeCargaElaDeveSerAtribuidaAoPontoDeCarga:
 	forall(v in I, p in K){
@@ -175,6 +165,9 @@ subject to {
 		tfp[i] >= 0;
 		tfb[i] >= 0;
 		hcc[i] >= 0;
+		forall(b in B){
+			v[i][b] >= 0;		
+		}
 	}
 	NaoNegatividade:
 	forall(p in K){
@@ -204,6 +197,7 @@ execute {
 			for(var b in B){
 				if(y[i][j][b] == 1){
 					writeln("Viagem ",j, " sucede viagem ", i, " na betoneira ",b);
+					writeln("v[",i,"][",b,"]  = ",v[i][b], " e v[",j,"][",b,"]  = ",v[j][b]);
 					for(var ii in I){
 						for(var p in K){
 							if(vp[j][p] == 1){
@@ -215,12 +209,41 @@ execute {
 			}		
 		}	
 	}
-	
+	/*writeln("-------------------------------------------------------------------");
+	for(var i in I){
+		for(var j in I){
+			for(var b in B){
+				if(y[i][j][b] == 1){
+					writeln("Viagem ",i, " antecede viagem ", j, " na betoneira ",b);								
+				}			
+			}		
+		}	
+	}
+	writeln("-------------------------------------------------------------------");
+	for(var i in I){
+		for(var j in I){
+			for(var p in K){
+				if(x[i][j][p] == 1){
+					writeln("Viagem ",i, " antecede viagem ", j, " no ponto de carga ",p);					
+				}							
+			}
+		}	
+	}
+	writeln("-------------------------------------------------------------------");
+	for(var i in I){
+		for(var j in I){
+			for(var p in K){
+				if(x[i][j][p] == 1){
+					writeln("Viagem ",j, " sucede viagem ", i, " no ponto de carga ",p);					
+				}							
+			}
+		}	
+	}*/
 	writeln("-------------------------------------------------------------------");
 	for(var b in B){
 		writeln("TRAJETO BETONEIRA ", b);
 		for(var viagem in Viagens){
-			if(viagem.betoneira == b){
+			if(viagem.betoneira == b && (viagem.viagem == 3 || viagem.viagem == 4)){
 				writeln("-------------------------------------------------------------------");			
 				writeln("VIAGEM ", viagem.viagem);
 				writeln("PontoCarga: ", viagem.pontoCarga);
