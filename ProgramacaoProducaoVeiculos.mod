@@ -16,6 +16,7 @@ float td[I] = ...; // Tempo de descarga no cliente da viagem v
 float tmaxvc[I] = ...; // Tempo maximo de vida do concreto da viagem v
 float hs[I] = ...; // Horario solicitado pelo cliente para chegada da viagem v
 
+float f[I][K] = ...; // Faturamento pelo atendimento da viagem v pelo ponto de carga p (Custo dos insumos + Custo rodoviário + Custo de pessoal)
 float c[I][K] = ...; // Custo de atendimento da viagem v pelo ponto de carga p (Custo dos insumos + Custo rodoviário + Custo de pessoal)
 float cnv[I] = ...; // Custo de não atendimento da viagem v
 float qvMax[K] = ...; // Quantidade de viagens que cada ponto de carga p pode atender por dia
@@ -42,18 +43,26 @@ dvar float ctnv; // Custo total de não atendimento de viagens
 
 dvar float v[I][B];
 
+dvar float teste;
+dvar float teste1;
+
 // Modelo
 
-minimize sum(v in I)(atrc[v] + avnc[v] + atrp[v] + avnp[v]) + 
-	sum(v in I, p in K)((vp[v][p] * c[v][p]) + 
-	ctnv + 
-	(cuve[p] * qve[p])); 
+maximize 
+	//sum(v in I)(atrc[v] + avnc[v] + atrp[v] + avnp[v]) + 
+	sum(v in I, p in K)((vp[v][p] * (f[v][p] - c[v][p])));
+	//+ ctnv 
+	//+ (cuve[p] * qve[p])); 
 
 subject to {
-	SeMaisViagensQueACapacidadeDoPontoCargaSaoAtendidasCustoDeveSerPago:
+	/*CustoTotalNaoAtendimentoDeViagens:
+	forall(v in I){
+		ctnv >= sum(p in K, b in B)(((1 - vp[v][p]) * cnv[v]) + ((1 - vb[v][b]) * cnv[v]));		
+	}*/
+	/*SeMaisViagensQueACapacidadeDoPontoCargaSaoAtendidasCustoDeveSerPago:
 	forall(p in K){
 		qve[p] >= sum(v in I)(vp[v][p]) - qvMax[p];
-	}
+	}*/
 	ViagemNaoPodeSucederElaMesmaNaPesagem:
 	forall(i in I, j in I, k in K : i == j){
 		x[i][j][k] <= 0;					
@@ -62,27 +71,25 @@ subject to {
 	forall(i in I, j in I, b in B : i == j){
 		y[i][j][b] <= 0;					
 	}
-	TodaViagemDeveSucederNoMaximoAlgumaViagemNaPesagemExcetoAPrimeira:
+	TodaViagemDeveAntecederSucederNoMaximoAlgumaViagemNaPesagemExcetoAPrimeira:
 	forall(p in K, v in I){
 		//sum(i in I : i != v)(x[i][v][p]) >= 1;
-		sum(i in I : i != v)(x[i][v][p]) <= 1;
-	}
-	TodaViagemDeveAntecederNoMaximoAlgumaViagemNaPesagemExcetoAPrimeira:
-	forall(p in K, v in I){
-		//sum(p in K, i in I)(x[i][v][p]) >= 1;
+		sum(i in I)(x[i][v][p]) <= 1;
 		sum(i in I)(x[v][i][p]) <= 1;
+		sum(i in I)(x[v][i][p]) <= sum(i in I)(x[i][v][p]);
+		sum(i in I)(x[v][i][p]) >= sum(i in I)(x[i][v][p]);
 	}
-	TodaViagemDeveSucederNoMaximoApenasUmaViagemEmUmaBetoneiraExcetoAPrimeira:
+	TodaViagemDeveAntecederSucederNoMaximoApenasUmaViagemEmUmaBetoneiraExcetoAPrimeira:
 	forall(b in B, v in I) {
 		//sum(b in B, i in I)(y[i][v][b]) >= 1;
 		sum(i in I)(y[i][v][b]) <= 1;
-	}
-	TodaViagemDeveAntecederNoMaximoApenasUmaViagemEmUmaBetoneiraExcetoAPrimeira:
-	forall(v in I, b in B) {
-		//sum(b in B, i in I)(y[i][v][b]) >= 1;
 		sum(i in I)(y[v][i][b]) <= 1;
+		sum(i in I)(y[v][i][b]) <= sum(i in I)(y[i][v][b]);
+		sum(i in I)(y[v][i][b]) >= sum(i in I)(y[i][v][b]);
 	}
-	//sum(i in I)(y[2][i][1]) <= 1;
+	Teste:
+	teste == sum(i in I)(y[7][i][1]);
+	teste1 == sum(i in I)(y[i][7][1]);
 	ViagemFicticia1AntecedeNoMaximoAlgumaViagemEmCadaPontoDeCarga:
 	forall(p in K){	
 		//sum(v in I : v > 1)(x[1][v][p]) >= 1;
@@ -129,14 +136,10 @@ subject to {
 		vb[v][b] <= sum(i in I)(y[i][v][b]);	
 	}
 	AtribuicaoViagemBetoneiraPontoCarga:
-	forall(b in B, p in K, v in I){
-		vb[v][b] + vp[v][p] <= 2 * pb[p][b];
-		vb[v][b] + vp[v][p] >= 2 * pb[p][b];
-	}
-	CustoTotalNaoAtendimentoDeViagens:
-	forall(v in I){
-		ctnv >= sum(p in K, b in B)(((1 - vp[v][p]) * cnv[v]) + ((1 - vb[v][b]) * cnv[v]));		
-	}
+	/*forall(b in B, p in K, v in I){
+		//vb[v][b] + vp[v][p] <= 2 * pb[p][b];
+		//vb[v][b] + vp[v][p] >= 2 * pb[p][b];
+	}*/
 	/*TodaViagemDeveSerAlocadaParaUmPontoDeCarga:
 	forall(v in I){
 		sum(p in K)(vp[v][p]) >= 1;
@@ -144,6 +147,11 @@ subject to {
 	}*/
 	AtrasoAvancoDasVaigens:
 	forall(i in I){
+		sum(b in B)(vb[i][b]) >= sum(p in K)(vp[i][p]);
+		sum(b in B)(vb[i][b]) <= sum(p in K)(vp[i][p]);
+		
+		sum(b in B)(vb[i][b]) <= sum(p in K)(vp[i][p]);
+	
 		atrc[i] >= hcc[i] - hs[i];
 		atrc[i] <= hcc[i] - hs[i];
 		
@@ -190,14 +198,27 @@ tuple Viagem {
 sorted {Viagem} Viagens = {};
 
 execute {
+	writeln("Viagem betoneira 7: ", vb[7][1]);
+	writeln("Viagem ponto carga 7: ", vp[7][1]);
+	writeln("Antecede 7: ", teste);
+	writeln("Sucede 7: ", teste1);
 	
-
+	for(var i in I){
+		for(var j in I){
+			for(var p in K){
+				if(x[i][j][p] == 1){
+					writeln("Viagem ",j, " sucede viagem ", i, " no pc ",p);								
+				}			
+			}		
+		}	
+	}
+	writeln("-------------------------------------------------------------------");
 	for(var i in I){
 		for(var j in I){
 			for(var b in B){
 				if(y[i][j][b] == 1){
 					writeln("Viagem ",j, " sucede viagem ", i, " na betoneira ",b);
-					writeln("v[",i,"][",b,"]  = ",v[i][b], " e v[",j,"][",b,"]  = ",v[j][b]);
+					//writeln("v[",i,"][",b,"]  = ",v[i][b], " e v[",j,"][",b,"]  = ",v[j][b]);
 					for(var ii in I){
 						for(var p in K){
 							if(vp[j][p] == 1){
@@ -209,6 +230,24 @@ execute {
 			}		
 		}	
 	}
+
+	/*for(var i in I){
+		for(var j in I){
+			for(var b in B){
+				if(y[i][j][b] == 1){
+					writeln("Viagem ",j, " sucede viagem ", i, " na betoneira ",b);
+					//writeln("v[",i,"][",b,"]  = ",v[i][b], " e v[",j,"][",b,"]  = ",v[j][b]);
+					for(var ii in I){
+						for(var p in K){
+							if(vp[j][p] == 1){
+								Viagens.add(tfb[j], j, i, p, b, tfp[j], hs[j], atrc[j], avnc[j]);							
+							}							
+						}					
+					}								
+				}			
+			}		
+		}	
+	}*/
 	/*writeln("-------------------------------------------------------------------");
 	for(var i in I){
 		for(var j in I){
