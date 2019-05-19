@@ -31,6 +31,12 @@
 			<ref name="ProgramacaoProducaoVeiculos.mod" type="model">
 			</ref>
 		</config>
+		<config default="false" name="MDMVRPWT_MaxReceita" category="opl">
+			<ref name="MDMVRPWT_MaxReceita.mod" type="model">
+			</ref>
+			<ref name="MDMVRPWT_MaxReceita.dat" type="data">
+			</ref>
+		</config>
 	</configs>
 	
 </project>
